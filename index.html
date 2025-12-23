@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AR Drawing Pro - Drag Panel</title>
+    <title>AR Drawing Pro - Ultimate</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,48 +13,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #000;
-            overflow: hidden;
-            touch-action: none;
-        }
+        body { font-family: 'Montserrat', sans-serif; background-color: #000; overflow: hidden; touch-action: none; }
+        
+        /* Slider Styling */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; height: 32px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #E5E7EB; border-radius: 99px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%; background: #2563EB; border: 4px solid #FFFFFF; margin-top: -8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-        /* Styling Slider */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent; 
-            height: 32px;
-        }
-
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 6px;
-            background: #E5E7EB;
-            border-radius: 99px;
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 22px;
-            width: 22px;
-            border-radius: 50%;
-            background: #2563EB;
-            border: 4px solid #FFFFFF;
-            margin-top: -8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        /* Bottom Sheet Transition */
-        #controlPanel {
-            will-change: transform;
-            transition: transform 0.1s ease-out; /* Transisi halus saat dilepas */
-        }
-
-        .pb-safe {
-            padding-bottom: env(safe-area-inset-bottom);
-        }
+        #controlPanel { will-change: transform; transition: transform 0.3s cubic-bezier(0,0,0.2,1); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Visual feedback untuk Pinch Zoom */
+        #overlayContainer { transition: transform 0.05s linear; }
     </style>
 </head>
 <body class="h-screen w-screen relative bg-black">
@@ -63,30 +33,24 @@
     
     <div id="loadingState" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 text-white p-6 text-center">
         <span class="material-symbols-rounded text-6xl mb-4 text-blue-500 animate-bounce">photo_camera</span>
-        <h2 class="text-xl font-bold mb-6">Izinkan Kamera untuk Memulai</h2>
-        <button onclick="initCamera()" class="bg-blue-600 text-white px-10 py-4 rounded-full font-bold shadow-xl active:scale-95 transition">
-            BUKA KAMERA
-        </button>
+        <button onclick="initCamera()" class="bg-blue-600 text-white px-10 py-4 rounded-full font-bold shadow-xl active:scale-95 transition">BUKA KAMERA</button>
     </div>
 
-    <div id="overlayContainer" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 touch-none origin-center">
+    <div id="overlayContainer" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 touch-none origin-center p-10">
         <img id="overlayImage" src="https://cdn-icons-png.flaticon.com/512/2919/2919602.png" 
              class="w-64 h-auto opacity-50 pointer-events-none select-none" alt="Overlay">
     </div>
 
     <div id="controlPanel" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] touch-none">
-        
-        <div class="w-full h-10 flex items-center justify-center cursor-grab active:cursor-grabbing" id="dragHandle">
+        <div class="w-full h-10 flex items-center justify-center cursor-grab" id="dragHandle">
             <div class="w-16 h-1.5 bg-gray-300 rounded-full"></div>
         </div>
 
-        <div class="px-6 pb-8 overflow-y-auto pb-safe" style="max-height: 70vh;">
+        <div class="px-6 pb-8 overflow-y-auto pb-safe" style="max-height: 60vh;">
             <div class="flex flex-col gap-6 pt-2">
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <div class="flex items-center gap-2 text-gray-800 font-bold text-xs">
-                            <span class="material-symbols-rounded text-blue-600 text-lg">opacity</span> TRANSPARANSI
-                        </div>
+                        <div class="flex items-center gap-2 text-gray-800 font-bold text-xs"><span class="material-symbols-rounded text-blue-600">opacity</span> TRANSPARANSI</div>
                         <span id="opacityValue" class="text-blue-600 font-bold text-sm">50%</span>
                     </div>
                     <input type="range" id="opacitySlider" min="0" max="100" value="50">
@@ -94,34 +58,25 @@
 
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <div class="flex items-center gap-2 text-gray-800 font-bold text-xs">
-                            <span class="material-symbols-rounded text-blue-600 text-lg">zoom_in</span> UKURAN
-                        </div>
+                        <div class="flex items-center gap-2 text-gray-800 font-bold text-xs"><span class="material-symbols-rounded text-blue-600">zoom_in</span> UKURAN</div>
                         <span id="scaleValue" class="text-blue-600 font-bold text-sm">1.0x</span>
                     </div>
-                    <input type="range" id="scaleSlider" min="0.2" max="3" step="0.1" value="1">
+                    <input type="range" id="scaleSlider" min="0.1" max="5" step="0.1" value="1">
+                    <p class="text-[9px] text-gray-400 mt-1 text-center font-medium italic">Gunakan dua jari pada gambar untuk zoom langsung</p>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4 mt-2">
                     <label class="flex flex-col items-center gap-2">
-                        <div class="w-full aspect-square flex items-center justify-center bg-gray-50 border border-gray-100 rounded-2xl active:bg-blue-50 transition">
-                            <span class="material-symbols-rounded text-gray-600">add_photo_alternate</span>
-                        </div>
+                        <div class="w-full aspect-square flex items-center justify-center bg-gray-50 border border-gray-100 rounded-2xl active:bg-blue-50 transition"><span class="material-symbols-rounded text-gray-600">add_photo_alternate</span></div>
                         <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Ganti</span>
                         <input type="file" id="imageUpload" accept="image/*" class="hidden">
                     </label>
-
                     <button id="lockBtn" class="flex flex-col items-center gap-2 group">
-                        <div class="w-full aspect-square flex items-center justify-center bg-gray-50 border border-gray-100 rounded-2xl group-[.active]:bg-red-50 group-[.active]:text-red-600 group-[.active]:border-red-200 transition">
-                            <span class="material-symbols-rounded" id="lockIcon">lock_open</span>
-                        </div>
+                        <div class="w-full aspect-square flex items-center justify-center bg-gray-50 border border-gray-100 rounded-2xl group-[.active]:bg-red-50 group-[.active]:text-red-600 transition"><span class="material-symbols-rounded" id="lockIcon">lock_open</span></div>
                         <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Kunci</span>
                     </button>
-
                     <button id="flashBtn" class="flex flex-col items-center gap-2 group">
-                        <div class="w-full aspect-square flex items-center justify-center bg-gray-50 border border-gray-100 rounded-2xl group-[.active]:bg-yellow-50 group-[.active]:text-yellow-600 group-[.active]:border-yellow-200 transition">
-                            <span class="material-symbols-rounded">flash_on</span>
-                        </div>
+                        <div class="w-full aspect-square flex items-center justify-center bg-gray-50 border border-gray-100 rounded-2xl group-[.active]:bg-yellow-100 group-[.active]:text-yellow-600 transition"><span class="material-symbols-rounded">flash_on</span></div>
                         <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Senter</span>
                     </button>
                 </div>
@@ -132,53 +87,83 @@
     <script>
         const panel = document.getElementById('controlPanel');
         const handle = document.getElementById('dragHandle');
-        const overlay = document.getElementById('overlayContainer');
+        const container = document.getElementById('overlayContainer');
         const img = document.getElementById('overlayImage');
+        let videoTrack = null;
 
-        // --- Logic Drag Panel (Up/Down) ---
-        let startY, currentY = 0, isDraggingPanel = false;
-        const PANEL_MIN = 60; // Tinggi minimal panel saat tertutup (pixel)
-        const PANEL_MAX = panel.offsetHeight;
+        // --- STATE ---
+        let state = {
+            scale: 1, x: 0, y: 0, 
+            isLocked: false,
+            panelOpen: true,
+            initialDist: 0,
+            initialScale: 1
+        };
 
-        handle.addEventListener('touchstart', (e) => {
-            startY = e.touches[0].clientY;
-            isDraggingPanel = true;
-            panel.style.transition = 'none'; // Matikan transisi saat ditarik
-        });
+        // --- CAMERA & FLASH FIX ---
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment", focusMode: "continuous" } 
+                });
+                document.getElementById('cameraFeed').srcObject = stream;
+                videoTrack = stream.getVideoTracks()[0];
+                document.getElementById('loadingState').style.display = 'none';
+                updateSliderFill(document.getElementById('opacitySlider'));
+                updateSliderFill(document.getElementById('scaleSlider'));
+            } catch (err) { alert("Akses kamera gagal: " + err.message); }
+        }
 
-        window.addEventListener('touchmove', (e) => {
-            if (!isDraggingPanel) return;
+        document.getElementById('flashBtn').onclick = async function() {
+            if (!videoTrack) return;
+            const capabilities = videoTrack.getCapabilities();
+            if (!capabilities.torch) return alert("Flash tidak didukung di browser/HP ini");
             
-            const touchY = e.touches[0].clientY;
-            const deltaY = touchY - startY;
-            
-            // Hitung posisi baru (hanya boleh ke bawah dari posisi awal)
-            let newY = Math.max(0, deltaY);
-            
-            // Batasi agar tidak hilang sepenuhnya (sisakan handle)
-            const limit = panel.offsetHeight - 60;
-            if (newY > limit) newY = limit;
+            const isOff = !this.classList.contains('active');
+            try {
+                await videoTrack.applyConstraints({ advanced: [{ torch: isOff }] });
+                this.classList.toggle('active');
+            } catch (e) { console.error(e); }
+        };
 
-            panel.style.transform = `translateY(${newY}px)`;
-            currentPanelY = newY;
-        });
+        // --- PINCH ZOOM & DRAG IMAGE ---
+        let lastTouchX, lastTouchY, isMoving = false;
 
-        window.addEventListener('touchend', () => {
-            if (!isDraggingPanel) return;
-            isDraggingPanel = false;
-            panel.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            
-            // Snapping: Jika ditarik lebih dari setengah, tutup. Jika tidak, buka lagi.
-            if (currentPanelY > panel.offsetHeight / 3) {
-                panel.style.transform = `translateY(${panel.offsetHeight - 80}px)`;
+        container.ontouchstart = (e) => {
+            if (state.isLocked) return;
+            if (e.touches.length === 2) {
+                state.initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                state.initialScale = state.scale;
             } else {
-                panel.style.transform = `translateY(0px)`;
+                lastTouchX = e.touches[0].clientX - state.x;
+                lastTouchY = e.touches[0].clientY - state.y;
+                isMoving = true;
             }
-        });
+        };
 
-        // --- Logic Kontrol Gambar (Sama seperti sebelumnya) ---
-        let scale = 1, imgX = 0, imgY = 0, isLocked = false;
+        window.ontouchmove = (e) => {
+            if (state.isLocked) return;
+            if (e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                const zoom = dist / state.initialDist;
+                state.scale = Math.min(Math.max(state.initialScale * zoom, 0.1), 5);
+                document.getElementById('scaleSlider').value = state.scale;
+                document.getElementById('scaleValue').textContent = parseFloat(state.scale).toFixed(1) + 'x';
+                updateSliderFill(document.getElementById('scaleSlider'));
+            } else if (isMoving) {
+                state.x = e.touches[0].clientX - lastTouchX;
+                state.y = e.touches[0].clientY - lastTouchY;
+            }
+            updateUI();
+        };
 
+        window.ontouchend = () => { isMoving = false; };
+
+        function updateUI() {
+            container.style.transform = `translate(calc(-50% + ${state.x}px), calc(-50% + ${state.y}px)) scale(${state.scale})`;
+        }
+
+        // --- SLIDERS ---
         document.getElementById('opacitySlider').oninput = (e) => {
             img.style.opacity = e.target.value / 100;
             document.getElementById('opacityValue').textContent = e.target.value + '%';
@@ -186,9 +171,9 @@
         };
 
         document.getElementById('scaleSlider').oninput = (e) => {
-            scale = e.target.value;
-            document.getElementById('scaleValue').textContent = parseFloat(scale).toFixed(1) + 'x';
-            updateImgPos();
+            state.scale = e.target.value;
+            document.getElementById('scaleValue').textContent = parseFloat(state.scale).toFixed(1) + 'x';
+            updateUI();
             updateSliderFill(e.target);
         };
 
@@ -197,46 +182,29 @@
             s.style.background = `linear-gradient(to right, #2563EB ${p}%, #E5E7EB ${p}%)`;
         }
 
-        function updateImgPos() {
-            overlay.style.transform = `translate(calc(-50% + ${imgX}px), calc(-50% + ${imgY}px)) scale(${scale})`;
-        }
+        // --- DRAG PANEL ---
+        let panelStartY, panelCurrentY = 0, isDraggingPanel = false;
+        handle.ontouchstart = (e) => { panelStartY = e.touches[0].clientY; isDraggingPanel = true; panel.style.transition = 'none'; };
+        window.addEventListener('touchmove', (e) => {
+            if (!isDraggingPanel) return;
+            let delta = e.touches[0].clientY - panelStartY;
+            if (delta < 0) delta = 0; // Batasi tarik ke atas
+            panel.style.transform = `translateY(${delta}px)`;
+            panelCurrentY = delta;
+        });
+        window.addEventListener('touchend', () => {
+            if (!isDraggingPanel) return;
+            isDraggingPanel = false;
+            panel.style.transition = 'transform 0.3s ease';
+            if (panelCurrentY > 100) { panel.style.transform = `translateY(calc(100% - 60px))`; state.panelOpen = false; }
+            else { panel.style.transform = `translateY(0)`; state.panelOpen = true; }
+        });
 
-        // Drag Gambar
-        let sX, sY, iX = 0, iY = 0, isDrgImg = false;
-        overlay.ontouchstart = (e) => {
-            if (isLocked) return;
-            sX = e.touches[0].clientX - iX;
-            sY = e.touches[0].clientY - iY;
-            isDrgImg = true;
-        };
-        window.ontouchmove = (e) => {
-            if (!isDrgImg) return;
-            imgX = e.touches[0].clientX - sX;
-            imgY = e.touches[0].clientY - sY;
-            updateImgPos();
-        };
-        window.ontouchend = () => { iX = imgX; iY = imgY; isDrgImg = false; };
-
-        // Init Kamera & Flash
-        let track;
-        async function initCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('cameraFeed').srcObject = stream;
-            track = stream.getVideoTracks()[0];
-            document.getElementById('loadingState').style.display = 'none';
-            updateSliderFill(document.getElementById('opacitySlider'));
-            updateSliderFill(document.getElementById('scaleSlider'));
-        }
-
+        // --- LOCK & UPLOAD ---
         document.getElementById('lockBtn').onclick = function() {
-            isLocked = !isLocked;
+            state.isLocked = !state.isLocked;
             this.classList.toggle('active');
-            document.getElementById('lockIcon').textContent = isLocked ? 'lock' : 'lock_open';
-        };
-
-        document.getElementById('flashBtn').onclick = async function() {
-            const active = this.classList.toggle('active');
-            await track.applyConstraints({ advanced: [{ torch: active }] });
+            document.getElementById('lockIcon').textContent = state.isLocked ? 'lock' : 'lock_open';
         };
 
         document.getElementById('imageUpload').onchange = (e) => {
