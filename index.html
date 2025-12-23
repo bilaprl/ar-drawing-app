@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>AR Drawing Pro</title>
-
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -22,181 +20,130 @@
             touch-action: none;
         }
 
-        /* --- STYLING SLIDER BARU (Garis & Fill) --- */
+        /* Styling Slider dengan Garis */
         input[type=range] {
             -webkit-appearance: none;
-            /* Hapus style default browser */
             width: 100%;
-            background: transparent;
-            height: 24px;
-            /* Area sentuh lebih besar */
+            background: transparent; 
+            height: 32px;
             cursor: pointer;
         }
 
-        /* Mengatur Garis (Track) */
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 4px;
-            /* Ketebalan garis */
+            height: 6px;
             cursor: pointer;
             background: #E5E7EB;
-            /* Warna abu-abu default */
             border-radius: 99px;
         }
 
-        /* Mengatur Tombol Bulat (Thumb) */
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 20px;
-            width: 20px;
+            height: 22px;
+            width: 22px;
             border-radius: 50%;
             background: #2563EB;
-            /* Warna Biru Utama */
-            border: 3px solid #FFFFFF;
-            /* Border Putih */
+            border: 4px solid #FFFFFF;
             cursor: pointer;
             margin-top: -8px;
-            /* Posisi vertikal tengah terhadap garis */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            /* Bayangan halus */
-            transition: transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        /* Efek saat ditekan */
-        input[type=range]:active::-webkit-slider-thumb {
-            transform: scale(1.2);
+        /* Penanganan area bawah untuk HP dengan notch (iPhone) */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
-        .material-symbols-rounded {
-            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        /* Custom Scrollbar untuk Card Settings */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 4px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background-color: #E5E7EB;
+            border-radius: 10px;
         }
     </style>
 </head>
-
 <body class="h-screen w-screen relative bg-black">
 
     <video id="cameraFeed" autoplay playsinline class="absolute inset-0 w-full h-full object-cover z-0"></video>
-
-    <div id="loadingState"
-        class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900/95 backdrop-blur text-white p-6 text-center">
-        <span class="material-symbols-rounded text-6xl mb-4 text-blue-500 animate-pulse">photo_camera</span>
-        <h2 class="text-xl font-bold mb-2">Mulai AR Drawing</h2>
-        <p class="text-sm text-gray-400 mb-6 max-w-xs">Kami perlu akses kamera untuk menampilkan gambar overlay di dunia
-            nyata.</p>
-        <button onclick="initCamera()"
-            class="bg-blue-600 active:bg-blue-700 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-blue-500/30 transition transform active:scale-95">
-            Buka Kamera
+    
+    <div id="loadingState" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 text-white p-6 text-center">
+        <span class="material-symbols-rounded text-6xl mb-4 text-blue-500 animate-bounce">photo_camera</span>
+        <h2 class="text-xl font-bold mb-4">Siap Menggambar?</h2>
+        <button onclick="initCamera()" class="bg-blue-600 text-white px-10 py-4 rounded-full font-bold shadow-xl active:scale-95 transition">
+            BUKA KAMERA
         </button>
     </div>
 
-    <div id="overlayContainer"
-        class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 touch-none cursor-move origin-center">
-        <img id="overlayImage" src="https://cdn-icons-png.flaticon.com/512/2919/2919602.png"
-            class="w-64 h-auto opacity-50 pointer-events-none select-none"
-            style="filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));" alt="Overlay">
+    <div id="overlayContainer" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 touch-none origin-center">
+        <img id="overlayImage" src="https://cdn-icons-png.flaticon.com/512/2919/2919602.png" 
+             class="w-64 h-auto opacity-50 pointer-events-none select-none" alt="Overlay">
     </div>
 
-    <div class="absolute bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl rounded-t-[2rem] shadow-[0_-5px_20px_rgba(0,0,0,0.1)] transition-transform duration-300 transform translate-y-0 pb-safe"
-        id="controlPanel">
-
-        <div class="w-full h-6 flex items-center justify-center pt-2" id="panelHandle">
-            <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+    <div id="controlPanel" class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] transition-all duration-500 ease-in-out transform translate-y-0">
+        
+        <div class="w-full h-8 flex items-center justify-center cursor-pointer" id="panelToggle">
+            <div class="w-16 h-1.5 bg-gray-300 rounded-full"></div>
         </div>
 
-        <div class="p-5 flex flex-col gap-6 pb-8">
-
-            <div class="flex flex-col gap-5">
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full">
-                        <span class="material-symbols-rounded text-[20px]">opacity</span>
-                    </div>
-                    <div class="flex-1">
-                        <div
-                            class="flex justify-between text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">
-                            <span>Transparansi</span>
-                            <span id="opacityValue" class="text-blue-600">50%</span>
+        <div class="px-6 pb-10 max-h-[60vh] overflow-y-auto pb-safe">
+            
+            <div class="flex flex-col gap-6">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center gap-2 text-gray-800 font-bold text-sm">
+                            <span class="material-symbols-rounded text-blue-600">opacity</span> TRANSPARANSI
                         </div>
-                        <input type="range" id="opacitySlider" min="0" max="100" value="50">
+                        <span id="opacityValue" class="text-blue-600 font-bold text-sm">50%</span>
                     </div>
+                    <input type="range" id="opacitySlider" min="0" max="100" value="50">
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <div class="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full">
-                        <span class="material-symbols-rounded text-[20px]">zoom_in</span>
-                    </div>
-                    <div class="flex-1">
-                        <div
-                            class="flex justify-between text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1">
-                            <span>Ukuran (Scale)</span>
-                            <span id="scaleValue" class="text-blue-600">1.0x</span>
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center gap-2 text-gray-800 font-bold text-sm">
+                            <span class="material-symbols-rounded text-blue-600">zoom_in</span> UKURAN (SCALE)
                         </div>
-                        <input type="range" id="scaleSlider" min="0.2" max="3" step="0.1" value="1">
+                        <span id="scaleValue" class="text-blue-600 font-bold text-sm">1.0x</span>
                     </div>
+                    <input type="range" id="scaleSlider" min="0.2" max="3" step="0.1" value="1">
                 </div>
-            </div>
 
-            <div class="h-px w-full bg-gray-100"></div>
+                <div class="h-px bg-gray-100 w-full"></div>
 
-            <div class="grid grid-cols-4 gap-2">
+                <div class="grid grid-cols-3 gap-4">
+                    <label class="flex flex-col items-center gap-2">
+                        <div class="w-14 h-14 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-2xl active:bg-blue-50 transition">
+                            <span class="material-symbols-rounded text-gray-700">add_photo_alternate</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ganti</span>
+                        <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                    </label>
 
-                <label class="flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition">
-                    <div
-                        class="w-12 h-12 flex items-center justify-center bg-gray-100 text-gray-700 rounded-2xl shadow-sm border border-gray-200">
-                        <span class="material-symbols-rounded">add_photo_alternate</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-gray-500">Galeri</span>
-                    <input type="file" id="imageUpload" accept="image/*" class="hidden">
-                </label>
+                    <button id="lockBtn" class="flex flex-col items-center gap-2 group">
+                        <div class="w-14 h-14 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-2xl group-[.active]:bg-red-50 group-[.active]:text-red-600 group-[.active]:border-red-200 transition">
+                            <span class="material-symbols-rounded text-gray-700" id="lockIcon">lock_open</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Kunci</span>
+                    </button>
 
-                <button id="flashBtn" class="flex flex-col items-center gap-1.5 active:scale-95 transition group">
-                    <div
-                        class="w-12 h-12 flex items-center justify-center bg-gray-100 text-gray-700 rounded-2xl shadow-sm border border-gray-200 group-[.active]:bg-yellow-100 group-[.active]:text-yellow-600 group-[.active]:border-yellow-200 transition-colors">
-                        <span class="material-symbols-rounded">flash_on</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-gray-500">Senter</span>
-                </button>
-
-                <button id="lockBtn" class="flex flex-col items-center gap-1.5 active:scale-95 transition group">
-                    <div
-                        class="w-12 h-12 flex items-center justify-center bg-gray-100 text-gray-700 rounded-2xl shadow-sm border border-gray-200 group-[.active]:bg-red-100 group-[.active]:text-red-600 group-[.active]:border-red-200 transition-colors">
-                        <span class="material-symbols-rounded" id="lockIcon">lock_open</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-gray-500">Kunci</span>
-                </button>
-
-                <button id="hideUiBtn" class="flex flex-col items-center gap-1.5 active:scale-95 transition">
-                    <div
-                        class="w-12 h-12 flex items-center justify-center bg-gray-100 text-gray-700 rounded-2xl shadow-sm border border-gray-200">
-                        <span class="material-symbols-rounded">visibility_off</span>
-                    </div>
-                    <span class="text-[10px] font-semibold text-gray-500">Hide</span>
-                </button>
-
+                    <button id="flashBtn" class="flex flex-col items-center gap-2 group">
+                        <div class="w-14 h-14 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-2xl group-[.active]:bg-yellow-50 group-[.active]:text-yellow-600 group-[.active]:border-yellow-200 transition">
+                            <span class="material-symbols-rounded text-gray-700">flash_on</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Senter</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <button id="showUiBtn"
-        class="hidden absolute bottom-8 right-6 z-50 w-12 h-12 bg-white text-gray-800 rounded-full shadow-xl flex items-center justify-center animate-bounce">
-        <span class="material-symbols-rounded">visibility</span>
+    <button id="showPanelBtn" class="hidden fixed bottom-8 right-6 z-50 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center transition active:scale-90">
+        <span class="material-symbols-rounded">settings</span>
     </button>
 
     <script>
-        // --- Logic Slider dengan Garis Berwarna (Progress Fill) ---
-        function updateSliderTrack(slider) {
-            const min = parseFloat(slider.min);
-            const max = parseFloat(slider.max);
-            const val = parseFloat(slider.value);
-
-            // Hitung persentase posisi thumb (0% - 100%)
-            const percentage = ((val - min) / (max - min)) * 100;
-
-            // Update CSS variable background: Linear Gradient
-            // Kiri: Biru (#2563EB), Kanan: Abu-abu (#E5E7EB)
-            slider.style.background = `linear-gradient(to right, #2563EB ${percentage}%, #E5E7EB ${percentage}%)`;
-        }
-
-        // --- Core App Logic ---
         const els = {
             video: document.getElementById('cameraFeed'),
             overlayContainer: document.getElementById('overlayContainer'),
@@ -206,150 +153,108 @@
             scaleSlider: document.getElementById('scaleSlider'),
             opacityVal: document.getElementById('opacityValue'),
             scaleVal: document.getElementById('scaleValue'),
-            // ... tombol lain sama
+            controlPanel: document.getElementById('controlPanel'),
+            panelToggle: document.getElementById('panelToggle'),
+            showPanelBtn: document.getElementById('showPanelBtn')
         };
 
-        const state = {
-            scale: 1,
-            opacity: 0.5,
-            isLocked: false,
-            videoStream: null
+        let state = { scale: 1, currentX: 0, currentY: 0, isLocked: false };
+
+        // Inisialisasi Slider Track
+        function updateSlider(slider) {
+            const percentage = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+            slider.style.background = `linear-gradient(to right, #2563EB ${percentage}%, #E5E7EB ${percentage}%)`;
+        }
+
+        // Toggle Panel (Sembunyikan/Munculkan)
+        els.panelToggle.onclick = () => {
+            els.controlPanel.style.transform = 'translateY(100%)';
+            setTimeout(() => els.showPanelBtn.classList.remove('hidden'), 300);
         };
 
-        // 1. Inisialisasi Slider saat loading
-        window.addEventListener('load', () => {
-            updateSliderTrack(els.opacitySlider);
-            updateSliderTrack(els.scaleSlider);
-        });
+        els.showPanelBtn.onclick = () => {
+            els.controlPanel.style.transform = 'translateY(0)';
+            els.showPanelBtn.classList.add('hidden');
+        };
 
-        // 2. Event Listener Slider Opacity
-        els.opacitySlider.addEventListener('input', (e) => {
-            const val = e.target.value;
-            els.overlayImage.style.opacity = val / 100;
-            els.opacityVal.textContent = `${val}%`;
-            updateSliderTrack(e.target); // Panggil fungsi update garis
-        });
+        // Opacity
+        els.opacitySlider.oninput = (e) => {
+            els.overlayImage.style.opacity = e.target.value / 100;
+            els.opacityVal.textContent = e.target.value + '%';
+            updateSlider(e.target);
+        };
 
-        // 3. Event Listener Slider Scale
-        els.scaleSlider.addEventListener('input', (e) => {
-            state.scale = parseFloat(e.target.value);
-            els.scaleVal.textContent = `${state.scale.toFixed(1)}x`;
+        // Scale
+        els.scaleSlider.oninput = (e) => {
+            state.scale = e.target.value;
+            els.scaleVal.textContent = parseFloat(e.target.value).toFixed(1) + 'x';
             updateTransform();
-            updateSliderTrack(e.target); // Panggil fungsi update garis
-        });
+            updateSlider(e.target);
+        };
 
-        // --- Logic Kamera & Lainnya (Sama seperti sebelumnya) ---
-        async function initCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }
-                });
-                els.video.srcObject = stream;
-                state.videoStream = stream;
-                // Get track for flashlight
-                state.track = stream.getVideoTracks()[0];
-                els.loadingState.style.display = 'none';
-            } catch (err) {
-                alert("Error Kamera: Pastikan buka di HTTPS atau beri izin.");
-            }
-        }
-
-        // Update Transform (Geser/Zoom Gambar)
         function updateTransform() {
-            els.overlayContainer.style.transform =
-                `translate(calc(-50% + ${state.currentX || 0}px), calc(-50% + ${state.currentY || 0}px)) scale(${state.scale})`;
+            els.overlayContainer.style.transform = `translate(calc(-50% + ${state.currentX}px), calc(-50% + ${state.currentY}px)) scale(${state.scale})`;
         }
 
-        // --- Drag Logic ---
-        let isDragging = false;
-        let startX, startY, initialX = 0, initialY = 0;
-
-        const container = els.overlayContainer;
-
+        // Drag Logic
+        let isDragging = false, startX, startY, initialX = 0, initialY = 0;
         const dragStart = (e) => {
             if (state.isLocked) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
             startX = clientX - initialX;
             startY = clientY - initialY;
             isDragging = true;
         };
-
         const dragMove = (e) => {
             if (!isDragging) return;
-            e.preventDefault();
-
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
             state.currentX = clientX - startX;
             state.currentY = clientY - startY;
-
             updateTransform();
         };
-
         const dragEnd = () => {
-            initialX = state.currentX || 0;
-            initialY = state.currentY || 0;
+            initialX = state.currentX;
+            initialY = state.currentY;
             isDragging = false;
         };
 
-        // Attach Drag Events
-        container.addEventListener("touchstart", dragStart, { passive: false });
-        window.addEventListener("touchmove", dragMove, { passive: false });
+        els.overlayContainer.addEventListener("touchstart", dragStart);
+        window.addEventListener("touchmove", dragMove, {passive: false});
         window.addEventListener("touchend", dragEnd);
 
-        // Mouse Events (Desktop)
-        container.addEventListener("mousedown", dragStart);
-        window.addEventListener("mousemove", dragMove);
-        window.addEventListener("mouseup", dragEnd);
-
-        // --- Button Events ---
-
-        // Upload
-        document.getElementById('imageUpload').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => els.overlayImage.src = e.target.result;
-                reader.readAsDataURL(file);
-                // Reset posisi
-                state.currentX = 0; state.currentY = 0; initialX = 0; initialY = 0;
-                updateTransform();
-            }
-        });
-
-        // Flashlight
-        document.getElementById('flashBtn').addEventListener('click', async function () {
-            if (!state.track) return;
-            const btn = this;
-            const isFlashOn = btn.classList.contains('active');
+        // Init Kamera
+        async function initCamera() {
             try {
-                await state.track.applyConstraints({ advanced: [{ torch: !isFlashOn }] });
-                btn.classList.toggle('active');
-            } catch (e) { console.log(e); alert('Flash tidak didukung'); }
-        });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                els.video.srcObject = stream;
+                state.track = stream.getVideoTracks()[0];
+                els.loadingState.style.display = 'none';
+                updateSlider(els.opacitySlider);
+                updateSlider(els.scaleSlider);
+            } catch (err) { alert("Izin kamera ditolak."); }
+        }
 
-        // Lock
-        document.getElementById('lockBtn').addEventListener('click', function () {
+        // Lock & Flash
+        document.getElementById('lockBtn').onclick = function() {
             state.isLocked = !state.isLocked;
             this.classList.toggle('active');
             document.getElementById('lockIcon').textContent = state.isLocked ? 'lock' : 'lock_open';
-            els.overlayContainer.style.cursor = state.isLocked ? 'default' : 'move';
-        });
+        };
 
-        // UI Toggle
-        document.getElementById('hideUiBtn').addEventListener('click', () => {
-            document.getElementById('controlPanel').style.transform = 'translateY(150%)';
-            document.getElementById('showUiBtn').classList.remove('hidden');
-        });
-        document.getElementById('showUiBtn').addEventListener('click', () => {
-            document.getElementById('controlPanel').style.transform = 'translateY(0)';
-            document.getElementById('showUiBtn').classList.add('hidden');
-        });
+        document.getElementById('flashBtn').onclick = async function() {
+            if (!state.track) return;
+            const isFlashOn = this.classList.contains('active');
+            await state.track.applyConstraints({ advanced: [{ torch: !isFlashOn }] });
+            this.classList.toggle('active');
+        };
 
+        document.getElementById('imageUpload').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (e) => els.overlayImage.src = e.target.result;
+            reader.readAsDataURL(e.target.files[0]);
+        };
     </script>
 </body>
-
 </html>
